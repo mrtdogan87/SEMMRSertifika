@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/seltifika
+      DIRECT_URL: postgresql://user:password@localhost:5432/seltifika
+      ADMIN_BOOTSTRAP_EMAIL: admin@example.com
+      ADMIN_BOOTSTRAP_PASSWORD: change-me
+      APP_BASE_URL: http://localhost:3000
+      SESSION_SECRET: ci-secret
+      RESEND_API_KEY: dummy
+      RESEND_SENDER_EMAIL: no-reply@example.com
+      RESEND_SENDER_NAME: SEMMR Sertifika
+      FILE_STORAGE_ROOT: ./storage/certificates
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run lint
+      - run: npm run build

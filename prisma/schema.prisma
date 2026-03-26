@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum CertificateType {
+  HAKEMLIK
+  REKTORLUK
+  YAZARLIK
+}
+
+enum CertificateStatus {
+  DRAFT
+  GENERATED
+  DRAFTED_EMAIL
+  SENT
+  FAILED
+}
+
+enum EmailActionType {
+  DRAFT
+  SEND
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CertificateTemplate {
+  id                      String           @id @default(cuid())
+  type                    CertificateType  @unique
+  name                    String
+  isActive                Boolean          @default(true)
+  backgroundPath          String
+  subjectTemplate         String
+  bodyTemplate            String
+  certificateTextTemplate String
+  layoutConfigJson        Json
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  records                 CertificateRecord[]
+}
+
+model CertificateRecord {
+  id               String             @id @default(cuid())
+  templateId       String
+  type             CertificateType
+  status           CertificateStatus  @default(DRAFT)
+  fullName         String
+  email            String
+  eventName        String
+  eventDate        DateTime?
+  organizer        String
+  customFieldsJson Json
+  pdfPath          String?
+  pdfFileSize      Int?
+  lastError        String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  template         CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  emailLogs        CertificateEmailLog[]
+
+  @@index([type, status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model CertificateEmailLog {
+  id                  String          @id @default(cuid())
+  certificateRecordId String
+  actionType          EmailActionType
+  recipient           String
+  subject             String
+  body                String
+  providerMessageId   String?
+  status              String
+  errorMessage        String?
+  createdAt           DateTime        @default(now())
+  certificateRecord   CertificateRecord @relation(fields: [certificateRecordId], references: [id], onDelete: Cascade)
+
+  @@index([certificateRecordId, createdAt])
+}
