@@ -12,7 +12,7 @@ import { generateCertificatePdf } from "@/lib/pdf";
 import { writeCertificatePdf, readCertificatePdf, deleteCertificatePdf } from "@/lib/storage";
 import { buildEmailContent, sendCertificateEmail } from "@/lib/email";
 import { validateTemplatePlaceholders } from "@/lib/placeholders";
-import { getDefaultTemplateSeed } from "@/lib/templates";
+import { getDefaultTemplateSeed, getDefaultTemplateSeeds } from "@/lib/templates";
 import { getDefaultTemplateName, getCertificateTypeLabel } from "@/lib/certificate-presets";
 
 function parseJsonString(value: string) {
@@ -21,6 +21,28 @@ function parseJsonString(value: string) {
   } catch {
     return {};
   }
+}
+
+async function ensureDefaultTemplates() {
+  const seeds = getDefaultTemplateSeeds();
+
+  await Promise.all(
+    seeds.map((template) =>
+      prisma.certificateTemplate.upsert({
+        where: { type: template.type },
+        update: {
+          name: template.name,
+          isActive: template.isActive,
+          backgroundPath: template.backgroundPath,
+          subjectTemplate: template.subjectTemplate,
+          bodyTemplate: template.bodyTemplate,
+          certificateTextTemplate: template.certificateTextTemplate,
+          layoutConfigJson: template.layoutConfigJson,
+        },
+        create: template,
+      }),
+    ),
+  );
 }
 
 function resolveTemplateCertificateTitle(template: {
@@ -72,6 +94,7 @@ export function normalizeFilters(input?: Partial<CertificateListFilters>): Certi
 }
 
 export async function listCertificateTemplates() {
+  await ensureDefaultTemplates();
   const templates = await prisma.certificateTemplate.findMany({
     orderBy: { createdAt: "asc" },
   });
@@ -91,6 +114,7 @@ export async function listCertificateTemplates() {
 }
 
 export async function createCertificateRecord(input: CertificateFormInput) {
+  await ensureDefaultTemplates();
   const template = await prisma.certificateTemplate.findUnique({
     where: { id: input.templateId },
   });
@@ -418,6 +442,7 @@ export async function updateTemplateSettings(input: {
   layoutConfigJson?: string;
   backgroundPath?: string;
 }) {
+  await ensureDefaultTemplates();
   const template = await prisma.certificateTemplate.findUnique({
     where: { id: input.id },
     select: { type: true },
@@ -445,6 +470,7 @@ export async function updateTemplateSettings(input: {
 }
 
 export async function getTemplateByType(type: CertificateType) {
+  await ensureDefaultTemplates();
   return prisma.certificateTemplate.findUnique({
     where: { type },
   });

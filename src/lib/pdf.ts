@@ -11,6 +11,7 @@ import { upperTR } from "@/lib/utils";
 
 const FONT_CANDIDATES = {
   regular: [
+    "node_modules/notosans-fontface/fonts/NotoSans-Regular.ttf",
     "assets/fonts/DejaVuSans.ttf",
     "assets/fonts/LiberationSans-Regular.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -21,6 +22,7 @@ const FONT_CANDIDATES = {
     "/System/Library/Fonts/Supplemental/Arial.ttf",
   ],
   bold: [
+    "node_modules/notosans-fontface/fonts/NotoSans-Bold.ttf",
     "assets/fonts/DejaVuSans-Bold.ttf",
     "assets/fonts/LiberationSans-Bold.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
