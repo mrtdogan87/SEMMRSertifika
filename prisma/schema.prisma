@@ -3,15 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 enum CertificateType {
   HAKEMLIK
-  REKTORLUK
+  EDITORLUK
   YAZARLIK
+  DIGER
 }
 
 enum CertificateStatus {
@@ -45,7 +45,7 @@ model CertificateTemplate {
   subjectTemplate         String
   bodyTemplate            String
   certificateTextTemplate String
-  layoutConfigJson        Json
+  layoutConfigJson        String
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
   records                 CertificateRecord[]
@@ -61,7 +61,7 @@ model CertificateRecord {
   eventName        String
   eventDate        DateTime?
   organizer        String
-  customFieldsJson Json
+  customFieldsJson String
   pdfPath          String?
   pdfFileSize      Int?
   lastError        String?

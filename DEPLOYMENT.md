@@ -5,7 +5,7 @@
 1. `.env` içini gerçek değerlerle doldurun.
 2. Gerekirse `public/certificate-backgrounds/*.png` dosyalarını gerçek sertifika zeminleriyle değiştirin.
 3. Veritabanını hazırlayın:
-   - `npx prisma migrate deploy`
+   - `npm run prisma:migrate:dev`
    - `npm run prisma:seed`
 4. Uygulamayı test edin:
    - `npm run lint`
@@ -22,7 +22,7 @@
    - Build: `npm run build`
    - Start: `npm run start`
 6. İlk deploy sonrası şunları çalıştırın:
-   - `npx prisma migrate deploy`
+   - `npm run prisma:migrate:deploy`
    - `npm run prisma:seed`
 
 ## GitHub Akışı

@@ -13,8 +13,9 @@ export async function GET(request: Request) {
     type: (searchParams.get("type") ?? "ALL") as
       | "ALL"
       | "HAKEMLIK"
-      | "REKTORLUK"
-      | "YAZARLIK",
+      | "EDITORLUK"
+      | "YAZARLIK"
+      | "DIGER",
     status: (searchParams.get("status") ?? "ALL") as
       | "ALL"
       | "DRAFT"
@@ -38,15 +39,13 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const record = await createCertificateRecord({
       templateId: String(formData.get("templateId") ?? ""),
-      type: String(formData.get("type") ?? "HAKEMLIK") as "HAKEMLIK" | "REKTORLUK" | "YAZARLIK",
       fullName: String(formData.get("fullName") ?? ""),
       email: String(formData.get("email") ?? ""),
-      eventName: String(formData.get("eventName") ?? ""),
-      eventDate: String(formData.get("eventDate") ?? ""),
-      organizer: String(formData.get("organizer") ?? ""),
-      ozel1: String(formData.get("ozel1") ?? ""),
-      ozel2: String(formData.get("ozel2") ?? ""),
-      ozel3: String(formData.get("ozel3") ?? ""),
+      articleTitle: String(formData.get("articleTitle") ?? ""),
+      date: String(formData.get("date") ?? ""),
+      certificateTitle: String(formData.get("certificateTitle") ?? ""),
+      articleId: String(formData.get("articleId") ?? ""),
+      evaluationDate: String(formData.get("evaluationDate") ?? ""),
     });
 
     return NextResponse.redirect(new URL(`/panel/sertifikalar/${record.id}`, request.url), { status: 303 });

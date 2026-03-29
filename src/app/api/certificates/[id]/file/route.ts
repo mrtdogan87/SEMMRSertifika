@@ -8,7 +8,7 @@ type RouteProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, { params }: RouteProps) {
+export async function GET(request: Request, { params }: RouteProps) {
   if (!(await assertAdminApiAccess())) {
     return NextResponse.json({ error: "Yetkisiz erişim." }, { status: 401 });
   }
@@ -23,12 +23,15 @@ export async function GET(_request: Request, { params }: RouteProps) {
   }
 
   const bytes = await readCertificatePdf(record.pdfPath);
+  const { searchParams } = new URL(request.url);
+  const disposition = searchParams.get("inline") === "1" ? "inline" : "attachment";
+  const safeName = sanitizeFileName(record.fullName) || record.id;
 
   return new NextResponse(bytes, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${sanitizeFileName(record.fullName) || record.id}.pdf"`,
+      "Content-Disposition": `${disposition}; filename="${safeName}.pdf"`,
     },
   });
 }

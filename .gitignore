@@ -1,6 +1,8 @@
 .next
 node_modules
 .env
+prisma/dev.db
+seltifika-init.sql
 storage/certificates/*
 !storage/certificates/.gitkeep
 coverage

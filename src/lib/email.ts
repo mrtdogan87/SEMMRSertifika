@@ -4,6 +4,14 @@ import { getResendConfig } from "@/lib/config";
 import { buildPlaceholderValues, fillTemplate } from "@/lib/placeholders";
 import { asRecord } from "@/lib/utils";
 
+function parseJsonString(value: string) {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return {};
+  }
+}
+
 function getResendClient() {
   const config = getResendConfig();
   if (!config.apiKey || !config.senderEmail) {
@@ -17,18 +25,17 @@ function getResendClient() {
 }
 
 export function buildEmailContent(record: CertificateRecord, template: CertificateTemplate) {
-  const customFields = asRecord(record.customFieldsJson);
+  const customFields = asRecord(parseJsonString(record.customFieldsJson || "{}"));
   const values = buildPlaceholderValues({
     fullName: record.fullName,
     email: record.email,
-    eventName: record.eventName,
-    eventDate: record.eventDate,
-    organizer: record.organizer,
+    articleTitle: record.eventName,
+    date: record.eventDate,
+    certificateTitle: record.organizer,
     type: record.type,
     customFields: {
-      ozel1: String(customFields.ozel1 ?? ""),
-      ozel2: String(customFields.ozel2 ?? ""),
-      ozel3: String(customFields.ozel3 ?? ""),
+      articleId: String(customFields.articleId ?? ""),
+      evaluationDate: String(customFields.evaluationDate ?? ""),
     },
   });
 

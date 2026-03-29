@@ -1,54 +1,90 @@
 import type { CertificateType, Prisma } from "@prisma/client";
+import {
+  getCertificatePreset,
+  getDefaultEvaluationLabel,
+  getDefaultTemplateName,
+} from "@/lib/certificate-presets";
 import { getDefaultLayout } from "@/lib/certificate-layouts";
+
+export { getCertificateTypeLabel } from "@/lib/certificate-presets";
+
+export function getDefaultTemplateSeed(type: CertificateType): Prisma.CertificateTemplateCreateInput {
+  const seed = getDefaultTemplateSeeds().find((item) => item.type === type);
+  if (!seed) {
+    throw new Error(`Varsayılan şablon bulunamadı: ${type}`);
+  }
+
+  return seed;
+}
+
+export function getSpecialFieldGuidance(type: CertificateType) {
+  const preset = getCertificatePreset(type);
+
+  if (preset.isCustom) {
+    return ["Diğer şablonunda başlık, metinler ve etiketler tamamen serbest bırakılır."];
+  }
+
+  switch (type) {
+    case "HAKEMLIK":
+      return ["Makale Adı, Makale ID ve Değerlendirme Tarihi alanları hakemlik şablonlarında kullanılabilir."];
+    case "EDITORLUK":
+      return ["Makale Adı, Makale ID ve Yayın Basım Tarihi alanları editörlük şablonlarında kullanılabilir."];
+    case "YAZARLIK":
+      return ["Makale Adı, Makale ID ve Yayın Basım Tarihi alanları yazarlık şablonlarında kullanılabilir."];
+    case "DIGER":
+      return ["Diğer şablonu ihtiyaç duyulan tüm özel sertifika senaryoları için serbest bırakılır."];
+  }
+}
 
 export function getDefaultTemplateSeeds(): Array<Prisma.CertificateTemplateCreateInput> {
   return [
     {
       type: "HAKEMLIK",
-      name: "Hakemlik Sertifikası",
+      name: getDefaultTemplateName("HAKEMLIK"),
       isActive: true,
       backgroundPath: "/certificate-backgrounds/hakemlik.png",
-      subjectTemplate: "Hakemlik Sertifikanız - {{ETKINLIK}}",
+      subjectTemplate: "Hakemlik Sertifikanız - {{MAKALE_ADI}}",
       bodyTemplate:
-        "Sayın {{AD}},\n\n{{ETKINLIK}} etkinliğine verdiğiniz hakemlik katkısı için sertifikanız ekte/ekranınızda hazırdır.\n\n{{DUZENLEYICI}}",
+        "Sayın {{AD}},\n\n{{MAKALE_ADI}} başlıklı çalışma için hazırlanan {{SERTIFIKA_BASLIGI}} kaydınız hazırdır.\n\nSertifika Tarihi: {{TARIH}}\nMakale ID: {{MAKALE_ID}}\nDeğerlendirme Tarihi: {{DEGERLENDIRME_TARIHI}}",
       certificateTextTemplate:
-        "{{DUZENLEYICI}} tarafından düzenlenen {{ETKINLIK}} kapsamında hakemlik katkılarınız için bu sertifika takdim edilmiştir.",
-      layoutConfigJson: getDefaultLayout("HAKEMLIK"),
+        "{{SERTIFIKA_BASLIGI}} kapsamında {{MAKALE_ADI}} başlıklı çalışma için sağladığınız katkı nedeniyle bu sertifika takdim edilmiştir.",
+      layoutConfigJson: JSON.stringify(getDefaultLayout("HAKEMLIK")),
     },
     {
-      type: "REKTORLUK",
-      name: "Rektörlük Sertifikası",
+      type: "EDITORLUK",
+      name: getDefaultTemplateName("EDITORLUK"),
       isActive: true,
-      backgroundPath: "/certificate-backgrounds/rektorluk.png",
-      subjectTemplate: "Rektörlük Sertifikanız - {{ETKINLIK}}",
+      backgroundPath: "/certificate-backgrounds/editorluk.png",
+      subjectTemplate: "Editörlük Sertifikanız - {{MAKALE_ADI}}",
       bodyTemplate:
-        "Sayın {{AD}},\n\n{{ETKINLIK}} etkinliğindeki katkınız için sertifikanız hazırlanmıştır.\n\n{{DUZENLEYICI}}",
+        "Sayın {{AD}},\n\n{{SERTIFIKA_BASLIGI}} kapsamında {{MAKALE_ADI}} kaydınız için sertifikanız hazırlanmıştır.\n\nSertifika Tarihi: {{TARIH}}\nMakale ID: {{MAKALE_ID}}\nYayın Basım Tarihi: {{DEGERLENDIRME_TARIHI}}",
       certificateTextTemplate:
-        "{{DUZENLEYICI}} tarafından {{ETKINLIK}} etkinliği kapsamında göstermiş olduğunuz katkı için bu sertifika takdim edilmiştir.",
-      layoutConfigJson: getDefaultLayout("REKTORLUK"),
+        "{{SERTIFIKA_BASLIGI}} kapsamında {{MAKALE_ADI}} için göstermiş olduğunuz editöryel katkı nedeniyle bu sertifika takdim edilmiştir.",
+      layoutConfigJson: JSON.stringify(getDefaultLayout("EDITORLUK")),
     },
     {
       type: "YAZARLIK",
-      name: "Yazarlık Sertifikası",
+      name: getDefaultTemplateName("YAZARLIK"),
       isActive: true,
       backgroundPath: "/certificate-backgrounds/yazarlik.png",
-      subjectTemplate: "Yazarlık Sertifikanız - {{ETKINLIK}}",
+      subjectTemplate: "Yazarlık Sertifikanız - {{MAKALE_ADI}}",
       bodyTemplate:
-        "Sayın {{AD}},\n\n{{ETKINLIK}} etkinliği için yazarlık sertifikanız hazırlanmıştır.\n\n{{DUZENLEYICI}}",
+        "Sayın {{AD}},\n\n{{MAKALE_ADI}} başlıklı çalışma için yazarlık sertifikanız hazırlanmıştır.\n\nSertifika Tarihi: {{TARIH}}\nMakale ID: {{MAKALE_ID}}\nYayın Basım Tarihi: {{DEGERLENDIRME_TARIHI}}",
       certificateTextTemplate:
-        "{{ETKINLIK}} kapsamında sunduğunuz yazarlık katkısı nedeniyle bu sertifika {{DUZENLEYICI}} tarafından takdim edilmiştir.",
-      layoutConfigJson: getDefaultLayout("YAZARLIK"),
+        "{{SERTIFIKA_BASLIGI}} kapsamında {{MAKALE_ADI}} başlıklı çalışmanız nedeniyle bu sertifika takdim edilmiştir.",
+      layoutConfigJson: JSON.stringify(getDefaultLayout("YAZARLIK")),
+    },
+    {
+      type: "DIGER",
+      name: getDefaultTemplateName("DIGER"),
+      isActive: true,
+      backgroundPath: "/certificate-backgrounds/editorluk.png",
+      subjectTemplate: "Sertifikanız Hazır - {{SERTIFIKA_BASLIGI}}",
+      bodyTemplate:
+        `Sayın {{AD}},\n\n{{SERTIFIKA_BASLIGI}} kaydınız hazırlanmıştır.\n\nSertifika Tarihi: {{TARIH}}\nMakale ID: {{MAKALE_ID}}\n${getDefaultEvaluationLabel("DIGER")}: {{DEGERLENDIRME_TARIHI}}`,
+      certificateTextTemplate:
+        "{{SERTIFIKA_BASLIGI}} kapsamında {{MAKALE_ADI}} için sunduğunuz katkı nedeniyle bu sertifika takdim edilmiştir.",
+      layoutConfigJson: JSON.stringify(getDefaultLayout("DIGER")),
     },
   ];
-}
-
-export function getCertificateTypeLabel(type: CertificateType) {
-  switch (type) {
-    case "HAKEMLIK":
-      return "Hakemlik";
-    case "REKTORLUK":
-      return "Rektörlük";
-    case "YAZARLIK":
-      return "Yazarlık";
-  }
 }

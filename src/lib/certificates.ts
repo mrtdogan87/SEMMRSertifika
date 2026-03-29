@@ -1,4 +1,6 @@
 import { CertificateStatus, type CertificateType } from "@prisma/client";
+import { resolveLayoutConfig } from "@/lib/certificate-layouts";
+import { isCertificateType, isCustomTemplateType, sortTemplatesByType } from "@/lib/certificate-presets";
 import { prisma } from "@/lib/prisma";
 import { parseDateSmart, asRecord, isValidEmail } from "@/lib/utils";
 import type {
@@ -7,17 +9,55 @@ import type {
   CertificateListFilters,
 } from "@/types/certificate";
 import { generateCertificatePdf } from "@/lib/pdf";
-import { writeCertificatePdf, readCertificatePdf } from "@/lib/storage";
+import { writeCertificatePdf, readCertificatePdf, deleteCertificatePdf } from "@/lib/storage";
 import { buildEmailContent, sendCertificateEmail } from "@/lib/email";
 import { validateTemplatePlaceholders } from "@/lib/placeholders";
+import { getDefaultTemplateSeed } from "@/lib/templates";
+import { getDefaultTemplateName, getCertificateTypeLabel } from "@/lib/certificate-presets";
+
+function parseJsonString(value: string) {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return {};
+  }
+}
+
+function resolveTemplateCertificateTitle(template: {
+  type: CertificateType;
+  layoutConfigJson: string;
+}) {
+  return resolveLayoutConfig(template.type, template.layoutConfigJson).defaults.certificateTitle.trim();
+}
+
+function resolveRecordCertificateTitle(
+  template: { type: CertificateType; layoutConfigJson: string },
+  inputTitle: string,
+) {
+  const explicitTitle = inputTitle.trim();
+  if (explicitTitle) {
+    return explicitTitle;
+  }
+
+  const fallbackTitle = resolveTemplateCertificateTitle(template);
+  if (fallbackTitle) {
+    return fallbackTitle;
+  }
+
+  if (isCustomTemplateType(template.type)) {
+    throw new Error("Diğer şablonunda Sertifika Başlığı zorunludur.");
+  }
+
+  return "";
+}
 
 export function normalizeFilters(input?: Partial<CertificateListFilters>): CertificateListFilters {
-  const type = input?.type;
+  const rawType = String(input?.type ?? "");
   const status = input?.status;
 
   return {
     q: String(input?.q ?? "").trim(),
-    type: type === "HAKEMLIK" || type === "REKTORLUK" || type === "YAZARLIK" ? type : "ALL",
+    type: isCertificateType(rawType) ? rawType : "ALL",
     status:
       status === "DRAFT" ||
       status === "GENERATED" ||
@@ -32,9 +72,22 @@ export function normalizeFilters(input?: Partial<CertificateListFilters>): Certi
 }
 
 export async function listCertificateTemplates() {
-  return prisma.certificateTemplate.findMany({
+  const templates = await prisma.certificateTemplate.findMany({
     orderBy: { createdAt: "asc" },
   });
+  return sortTemplatesByType(
+    templates.map((template) => {
+      const defaults = getDefaultTemplateSeed(template.type);
+      return {
+        ...template,
+        name: getDefaultTemplateName(template.type),
+        subjectTemplate: template.subjectTemplate.trim() || defaults.subjectTemplate,
+        bodyTemplate: template.bodyTemplate.trim() || defaults.bodyTemplate,
+        certificateTextTemplate:
+          template.certificateTextTemplate.trim() || defaults.certificateTextTemplate,
+      };
+    }),
+  );
 }
 
 export async function createCertificateRecord(input: CertificateFormInput) {
@@ -46,8 +99,8 @@ export async function createCertificateRecord(input: CertificateFormInput) {
     throw new Error("Sertifika şablonu bulunamadı.");
   }
 
-  if (!input.fullName.trim() || !input.email.trim() || !input.eventName.trim()) {
-    throw new Error("Ad Soyad, E-posta ve Etkinlik alanları zorunludur.");
+  if (!input.fullName.trim() || !input.email.trim() || !input.articleTitle.trim()) {
+    throw new Error("Ad Soyad, E-posta ve Makale Adı alanları zorunludur.");
   }
 
   return prisma.certificateRecord.create({
@@ -56,14 +109,13 @@ export async function createCertificateRecord(input: CertificateFormInput) {
       type: template.type,
       fullName: input.fullName.trim(),
       email: input.email.trim(),
-      eventName: input.eventName.trim(),
-      eventDate: parseDateSmart(input.eventDate),
-      organizer: input.organizer.trim(),
-      customFieldsJson: {
-        ozel1: input.ozel1?.trim() ?? "",
-        ozel2: input.ozel2?.trim() ?? "",
-        ozel3: input.ozel3?.trim() ?? "",
-      },
+      eventName: input.articleTitle.trim(),
+      eventDate: parseDateSmart(input.date),
+      organizer: resolveRecordCertificateTitle(template, input.certificateTitle),
+      customFieldsJson: JSON.stringify({
+        articleId: input.articleId?.trim() ?? "",
+        evaluationDate: input.evaluationDate?.trim() ?? "",
+      }),
     },
   });
 }
@@ -88,9 +140,9 @@ export async function getCertificateList(input?: Partial<CertificateListFilters>
       ...(filters.q
         ? {
             OR: [
-              { fullName: { contains: filters.q, mode: "insensitive" } },
-              { email: { contains: filters.q, mode: "insensitive" } },
-              { eventName: { contains: filters.q, mode: "insensitive" } },
+              { fullName: { contains: filters.q } },
+              { email: { contains: filters.q } },
+              { eventName: { contains: filters.q } },
             ],
           }
         : {}),
@@ -125,7 +177,7 @@ export async function getCertificateDetail(id: string): Promise<CertificateDetai
     return null;
   }
 
-  const custom = asRecord(record.customFieldsJson);
+  const custom = asRecord(parseJsonString(record.customFieldsJson));
 
   return {
     id: record.id,
@@ -133,13 +185,12 @@ export async function getCertificateDetail(id: string): Promise<CertificateDetai
     status: record.status,
     fullName: record.fullName,
     email: record.email,
-    eventName: record.eventName,
-    eventDate: record.eventDate?.toISOString() ?? "",
-    organizer: record.organizer,
+    articleTitle: record.eventName,
+    date: record.eventDate?.toISOString() ?? "",
+    certificateTitle: record.organizer,
     customFields: {
-      ozel1: String(custom.ozel1 ?? ""),
-      ozel2: String(custom.ozel2 ?? ""),
-      ozel3: String(custom.ozel3 ?? ""),
+      articleId: String(custom.articleId ?? ""),
+      evaluationDate: String(custom.evaluationDate ?? ""),
     },
     pdfPath: record.pdfPath,
     pdfFileSize: record.pdfFileSize,
@@ -149,10 +200,12 @@ export async function getCertificateDetail(id: string): Promise<CertificateDetai
     template: {
       id: record.template.id,
       name: record.template.name,
+      displayName: getCertificateTypeLabel(record.template.type),
       backgroundPath: record.template.backgroundPath,
       subjectTemplate: record.template.subjectTemplate,
       bodyTemplate: record.template.bodyTemplate,
       certificateTextTemplate: record.template.certificateTextTemplate,
+      layoutConfigJson: record.template.layoutConfigJson,
     },
     emailLogs: record.emailLogs.map((log) => ({
       id: log.id,
@@ -182,22 +235,21 @@ export async function generateCertificateForRecord(id: string) {
     validateTemplatePlaceholders(record.template.bodyTemplate);
     validateTemplatePlaceholders(record.template.certificateTextTemplate);
 
-    const customFields = asRecord(record.customFieldsJson);
+    const customFields = asRecord(parseJsonString(record.customFieldsJson));
     const generated = await generateCertificatePdf({
       type: record.type,
       fullName: record.fullName,
       email: record.email,
-      eventName: record.eventName,
-      eventDate: record.eventDate,
-      organizer: record.organizer,
+      articleTitle: record.eventName,
+      date: record.eventDate,
+      certificateTitle: record.organizer,
       customFields: {
-        ozel1: String(customFields.ozel1 ?? ""),
-        ozel2: String(customFields.ozel2 ?? ""),
-        ozel3: String(customFields.ozel3 ?? ""),
+        articleId: String(customFields.articleId ?? ""),
+        evaluationDate: String(customFields.evaluationDate ?? ""),
       },
       backgroundPath: record.template.backgroundPath,
       certificateTextTemplate: record.template.certificateTextTemplate,
-      layoutConfigJson: record.template.layoutConfigJson,
+      layoutConfigJson: parseJsonString(record.template.layoutConfigJson),
     });
 
     const file = await writeCertificatePdf(record.id, generated.bytes);
@@ -339,11 +391,21 @@ export async function sendRecordEmail(id: string) {
 
 export async function updateTemplateSettings(input: {
   id: string;
-  name: string;
   subjectTemplate: string;
   bodyTemplate: string;
   certificateTextTemplate: string;
+  layoutConfigJson?: string;
+  backgroundPath?: string;
 }) {
+  const template = await prisma.certificateTemplate.findUnique({
+    where: { id: input.id },
+    select: { type: true },
+  });
+
+  if (!template) {
+    throw new Error("Şablon bulunamadı.");
+  }
+
   validateTemplatePlaceholders(input.subjectTemplate);
   validateTemplatePlaceholders(input.bodyTemplate);
   validateTemplatePlaceholders(input.certificateTextTemplate);
@@ -351,10 +413,12 @@ export async function updateTemplateSettings(input: {
   return prisma.certificateTemplate.update({
     where: { id: input.id },
     data: {
-      name: input.name.trim(),
+      name: getDefaultTemplateName(template.type),
       subjectTemplate: input.subjectTemplate,
       bodyTemplate: input.bodyTemplate,
       certificateTextTemplate: input.certificateTextTemplate,
+      ...(input.layoutConfigJson ? { layoutConfigJson: input.layoutConfigJson } : {}),
+      ...(input.backgroundPath ? { backgroundPath: input.backgroundPath } : {}),
     },
   });
 }
@@ -363,4 +427,30 @@ export async function getTemplateByType(type: CertificateType) {
   return prisma.certificateTemplate.findUnique({
     where: { type },
   });
+}
+
+export async function deleteCertificateRecord(id: string) {
+  const record = await prisma.certificateRecord.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      pdfPath: true,
+    },
+  });
+
+  if (!record) {
+    throw new Error("Sertifika kaydı bulunamadı.");
+  }
+
+  await prisma.certificateEmailLog.deleteMany({
+    where: { certificateRecordId: record.id },
+  });
+
+  await prisma.certificateRecord.delete({
+    where: { id: record.id },
+  });
+
+  if (record.pdfPath) {
+    await deleteCertificatePdf(record.pdfPath);
+  }
 }

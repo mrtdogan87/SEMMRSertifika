@@ -64,7 +64,10 @@ export function sanitizeFileName(value: string) {
   return value
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "I")
     .replace(/[\\/:*?"<>|\n\r\t]/g, " ")
+    .replace(/[^\x20-\x7E]/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim();
 }

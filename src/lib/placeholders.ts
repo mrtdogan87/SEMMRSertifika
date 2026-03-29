@@ -1,29 +1,18 @@
 import type { CertificateType } from "@prisma/client";
 import type { CertificateCustomFields, PlaceholderValues } from "@/types/certificate";
+import { getCertificateTypeLabel } from "@/lib/certificate-presets";
 import { formatDateTR } from "@/lib/utils";
 
 const ALLOWED = [
   "AD",
-  "ETKINLIK",
+  "SERTIFIKA_BASLIGI",
+  "MAKALE_ADI",
   "TARIH",
-  "DUZENLEYICI",
+  "MAKALE_ID",
+  "DEGERLENDIRME_TARIHI",
   "EPOSTA",
   "SERTIFIKA_TURU",
-  "OZEL_1",
-  "OZEL_2",
-  "OZEL_3",
 ] as const;
-
-function typeLabel(type: CertificateType) {
-  switch (type) {
-    case "HAKEMLIK":
-      return "Hakemlik";
-    case "REKTORLUK":
-      return "Rektörlük";
-    case "YAZARLIK":
-      return "Yazarlık";
-  }
-}
 
 export function validateTemplatePlaceholders(input: string) {
   const matches = input.match(/\{\{(\w+)\}\}/g) ?? [];
@@ -39,22 +28,21 @@ export function validateTemplatePlaceholders(input: string) {
 export function buildPlaceholderValues(params: {
   fullName: string;
   email: string;
-  eventName: string;
-  eventDate: Date | null;
-  organizer: string;
+  articleTitle: string;
+  date: Date | null;
+  certificateTitle: string;
   type: CertificateType;
   customFields: CertificateCustomFields;
 }): PlaceholderValues {
   return {
     AD: params.fullName,
-    ETKINLIK: params.eventName,
-    TARIH: formatDateTR(params.eventDate),
-    DUZENLEYICI: params.organizer,
+    SERTIFIKA_BASLIGI: params.certificateTitle,
+    MAKALE_ADI: params.articleTitle,
+    TARIH: formatDateTR(params.date),
+    MAKALE_ID: params.customFields.articleId ?? "",
+    DEGERLENDIRME_TARIHI: params.customFields.evaluationDate ?? "",
     EPOSTA: params.email,
-    SERTIFIKA_TURU: typeLabel(params.type),
-    OZEL_1: params.customFields.ozel1 ?? "",
-    OZEL_2: params.customFields.ozel2 ?? "",
-    OZEL_3: params.customFields.ozel3 ?? "",
+    SERTIFIKA_TURU: getCertificateTypeLabel(params.type),
   };
 }
 

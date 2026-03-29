@@ -101,6 +101,16 @@ textarea {
   background: white;
 }
 
+.field input[readonly] {
+  background: #f7f0e4;
+  color: var(--muted);
+}
+
+.field input[type="checkbox"] {
+  width: auto;
+  justify-self: start;
+}
+
 .field textarea {
   min-height: 132px;
   resize: vertical;
@@ -259,6 +269,170 @@ textarea {
   gap: 20px;
 }
 
+.template-panel-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.template-switcher {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.template-switcher-button,
+.settings-tab {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--accent-strong);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.template-switcher-button-active,
+.settings-tab-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fffaf3;
+}
+
+.settings-editor-card {
+  padding: 28px;
+}
+
+.settings-editor-shell {
+  display: grid;
+  grid-template-columns: 720px minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-preview-column,
+.settings-form-column {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-tab-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.certificate-preview-shell {
+  width: 720px;
+  max-width: 720px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+
+.certificate-preview {
+  position: relative;
+  flex: none;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background-position: center;
+  background-size: cover;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.certificate-preview-loading {
+  width: 720px;
+  height: 509px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 250, 0.92), rgba(244, 241, 232, 0.98)),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(145, 111, 60, 0.05) 0,
+      rgba(145, 111, 60, 0.05) 14px,
+      rgba(145, 111, 60, 0.09) 14px,
+      rgba(145, 111, 60, 0.09) 28px
+    );
+}
+
+.certificate-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.certificate-preview-text {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  width: max-content;
+  max-width: 88%;
+  text-align: center;
+  color: #1f1b16;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.22);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1;
+  white-space: pre-wrap;
+}
+
+.certificate-preview-name,
+.certificate-preview-event {
+  font-weight: 700;
+}
+
+.certificate-preview-message {
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.certificate-preview-inline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  line-height: 1;
+}
+
+.certificate-preview-inline-label,
+.certificate-preview-inline-value {
+  display: inline-block;
+}
+
+.certificate-preview-editable {
+  cursor: grab;
+  padding: 4px 8px;
+  border-radius: 10px;
+}
+
+.certificate-preview-editable:hover {
+  outline: 1px dashed rgba(145, 111, 60, 0.8);
+  background: rgba(255, 253, 250, 0.16);
+}
+
+.certificate-preview-active {
+  outline: 2px solid rgba(145, 111, 60, 0.95);
+  background: rgba(255, 253, 250, 0.26);
+}
+
+.certificate-pdf-frame {
+  width: 100%;
+  min-height: 560px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: white;
+}
+
+.layout-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
 .mono {
   font-family: "SFMono-Regular", Consolas, monospace;
 }
@@ -266,7 +440,10 @@ textarea {
 @media (max-width: 960px) {
   .filter-grid,
   .form-grid,
-  .detail-grid {
+  .detail-grid,
+  .layout-editor-grid,
+  .settings-editor-shell,
+  .settings-section-grid {
     grid-template-columns: 1fr;
   }
 }

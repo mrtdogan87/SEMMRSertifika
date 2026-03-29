@@ -6,14 +6,13 @@ Bağımsız sertifika üretim ve yönetim paneli.
 
 1. `.env` içindeki placeholder değerleri gerçek bilgilerle değiştirin.
 2. `npm install`
-3. `npx prisma migrate deploy`
+3. `npm run prisma:migrate:dev`
 4. `npm run prisma:seed`
 5. `npm run dev`
 
 ## Gerekli Ortam Değişkenleri
 
 - `DATABASE_URL`
-- `DIRECT_URL`
 - `ADMIN_BOOTSTRAP_EMAIL`
 - `ADMIN_BOOTSTRAP_PASSWORD`
 - `APP_BASE_URL`

@@ -9,8 +9,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://user:password@localhost:5432/seltifika
-      DIRECT_URL: postgresql://user:password@localhost:5432/seltifika
+      DATABASE_URL: file:./dev.db
       ADMIN_BOOTSTRAP_EMAIL: admin@example.com
       ADMIN_BOOTSTRAP_PASSWORD: change-me
       APP_BASE_URL: http://localhost:3000
@@ -27,5 +26,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run prisma:generate
+      - run: npm run prisma:migrate:dev
       - run: npm run lint
       - run: npm run build

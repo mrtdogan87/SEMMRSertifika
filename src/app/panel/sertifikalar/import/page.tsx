@@ -9,15 +9,15 @@ export default async function ImportPage() {
 
   return (
     <PanelShell
-      title="CSV İçe Aktarma"
-      description="Manuel listedeki kayıtları CSV metni ile ekleyin. İlk satır başlık olmalıdır."
+      title="Excel İçe Aktar"
+      description="Şablona göre Excel dosyası indirip doldurun, sonra tekrar yükleyin. Kayıtlar açılır ve PDF’ler otomatik üretilir."
     >
       <section className="card">
         <CsvImportForm
           templates={templates.map((template) => ({
             id: template.id,
-            name: template.name,
             type: template.type,
+            layoutConfigJson: template.layoutConfigJson,
           }))}
         />
       </section>

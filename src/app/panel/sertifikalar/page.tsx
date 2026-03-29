@@ -22,7 +22,7 @@ export default async function CertificateListPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const items = await getCertificateList({
     q: params.q,
-    type: params.type as "ALL" | "HAKEMLIK" | "REKTORLUK" | "YAZARLIK" | undefined,
+    type: params.type as "ALL" | "HAKEMLIK" | "EDITORLUK" | "YAZARLIK" | "DIGER" | undefined,
     status: params.status as "ALL" | "DRAFT" | "GENERATED" | "DRAFTED_EMAIL" | "SENT" | "FAILED" | undefined,
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
@@ -31,7 +31,7 @@ export default async function CertificateListPage({ searchParams }: PageProps) {
   return (
     <PanelShell
       title="Sertifikalar"
-      description="Manuel oluşturulan ve CSV ile içe aktarılan sertifika kayıtlarını yönetin."
+      description="Manuel oluşturulan ve Excel ile içe aktarılan sertifika kayıtlarını yönetin."
     >
       <section className="card panel-grid">
         {params.ok ? <div className="notice success">{params.ok}</div> : null}
@@ -40,15 +40,16 @@ export default async function CertificateListPage({ searchParams }: PageProps) {
         <form className="filter-grid" method="GET">
           <div className="field">
             <label htmlFor="q">Arama</label>
-            <input id="q" name="q" defaultValue={params.q ?? ""} placeholder="Ad, e-posta, etkinlik" />
+            <input id="q" name="q" defaultValue={params.q ?? ""} placeholder="Ad, e-posta, makale adı" />
           </div>
           <div className="field">
             <label htmlFor="type">Tür</label>
             <select id="type" name="type" defaultValue={params.type ?? "ALL"}>
               <option value="ALL">Tümü</option>
               <option value="HAKEMLIK">Hakemlik</option>
-              <option value="REKTORLUK">Rektörlük</option>
+              <option value="EDITORLUK">Editörlük</option>
               <option value="YAZARLIK">Yazarlık</option>
+              <option value="DIGER">Diğer</option>
             </select>
           </div>
           <div className="field">
@@ -87,7 +88,7 @@ export default async function CertificateListPage({ searchParams }: PageProps) {
                 <th>Ad Soyad</th>
                 <th>Tür</th>
                 <th>E-posta</th>
-                <th>Etkinlik</th>
+                <th>Makale Adı</th>
                 <th>Durum</th>
                 <th>PDF</th>
                 <th>Oluşturma</th>
@@ -115,12 +116,7 @@ export default async function CertificateListPage({ searchParams }: PageProps) {
                       </Link>
                       <form className="inline-form" action={`/api/certificates/${item.id}/generate`} method="POST">
                         <button className="button secondary" type="submit">
-                          Üret
-                        </button>
-                      </form>
-                      <form className="inline-form" action={`/api/certificates/${item.id}/email-draft`} method="POST">
-                        <button className="button secondary" type="submit">
-                          Taslak
+                          {item.pdfPath ? "Yeniden Üret" : "Üret"}
                         </button>
                       </form>
                     </div>

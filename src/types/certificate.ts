@@ -1,22 +1,19 @@
 import type { CertificateStatus, CertificateType, EmailActionType } from "@prisma/client";
 
 export type CertificateCustomFields = {
-  ozel1?: string;
-  ozel2?: string;
-  ozel3?: string;
+  articleId?: string;
+  evaluationDate?: string;
 };
 
 export type CertificateFormInput = {
   templateId: string;
-  type: CertificateType;
   fullName: string;
   email: string;
-  eventName: string;
-  eventDate: string;
-  organizer: string;
-  ozel1?: string;
-  ozel2?: string;
-  ozel3?: string;
+  articleTitle: string;
+  date: string;
+  certificateTitle: string;
+  articleId?: string;
+  evaluationDate?: string;
 };
 
 export type CertificateListFilters = {
@@ -29,14 +26,13 @@ export type CertificateListFilters = {
 
 export type PlaceholderValues = {
   AD: string;
-  ETKINLIK: string;
+  SERTIFIKA_BASLIGI: string;
+  MAKALE_ADI: string;
   TARIH: string;
-  DUZENLEYICI: string;
+  MAKALE_ID: string;
+  DEGERLENDIRME_TARIHI: string;
   EPOSTA: string;
   SERTIFIKA_TURU: string;
-  OZEL_1: string;
-  OZEL_2: string;
-  OZEL_3: string;
 };
 
 export type CertificateDetailView = {
@@ -45,9 +41,9 @@ export type CertificateDetailView = {
   status: CertificateStatus;
   fullName: string;
   email: string;
-  eventName: string;
-  eventDate: string;
-  organizer: string;
+  articleTitle: string;
+  date: string;
+  certificateTitle: string;
   customFields: CertificateCustomFields;
   pdfPath: string | null;
   pdfFileSize: number | null;
@@ -57,10 +53,12 @@ export type CertificateDetailView = {
   template: {
     id: string;
     name: string;
+    displayName: string;
     backgroundPath: string;
     subjectTemplate: string;
     bodyTemplate: string;
     certificateTextTemplate: string;
+    layoutConfigJson?: string;
   };
   emailLogs: Array<{
     id: string;

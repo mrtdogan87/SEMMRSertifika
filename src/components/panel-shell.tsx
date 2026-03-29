@@ -24,7 +24,7 @@ export function PanelShell({
             Yeni Kayıt
           </Link>
           <Link className="button secondary" href="/panel/sertifikalar/import">
-            CSV İçe Aktar
+            Excel İçe Aktar
           </Link>
           <Link className="button secondary" href="/panel/ayarlar">
             Ayarlar
