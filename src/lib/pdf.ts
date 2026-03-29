@@ -4,9 +4,33 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb } from "pdf-lib";
 import type { CertificateType } from "@prisma/client";
 import { resolveLayoutConfig, type LabelConfig, type LayoutAlign } from "@/lib/certificate-layouts";
+import { getCertificateFontPaths } from "@/lib/config";
 import { buildPlaceholderValues, fillTemplate } from "@/lib/placeholders";
 import type { CertificateCustomFields } from "@/types/certificate";
 import { upperTR } from "@/lib/utils";
+
+const FONT_CANDIDATES = {
+  regular: [
+    "assets/fonts/DejaVuSans.ttf",
+    "assets/fonts/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+  ],
+  bold: [
+    "assets/fonts/DejaVuSans-Bold.ttf",
+    "assets/fonts/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSans-Bold.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+  ],
+} as const;
 
 function topToPdfY(pageHeight: number, top: number, fontSize: number) {
   return pageHeight - top - fontSize;
@@ -146,17 +170,65 @@ function wrapText(text: string, maxChars: number) {
 async function embedBackground(pdfDoc: PDFDocument, backgroundPath: string) {
   const absolute = path.join(process.cwd(), "public", backgroundPath.replace(/^\//, ""));
   const imageBytes = await fs.readFile(absolute);
-  if (backgroundPath.toLowerCase().endsWith(".png")) {
+  const extension = path.extname(backgroundPath).toLowerCase();
+
+  if (extension === ".png") {
     return pdfDoc.embedPng(imageBytes);
   }
 
-  return pdfDoc.embedJpg(imageBytes);
+  if (extension === ".jpg" || extension === ".jpeg") {
+    return pdfDoc.embedJpg(imageBytes);
+  }
+
+  throw new Error("Arka plan görseli desteklenmiyor. Sadece PNG, JPG veya JPEG kullanın.");
+}
+
+function toAbsoluteFontPath(value: string) {
+  return path.isAbsolute(value) ? value : path.resolve(process.cwd(), value);
+}
+
+async function findReadableFontPath(candidates: string[]) {
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const absolutePath = toAbsoluteFontPath(candidate);
+
+    try {
+      await fs.access(absolutePath);
+      return absolutePath;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+async function resolveFontPaths() {
+  const configured = getCertificateFontPaths();
+  const regularCandidates = configured.regular
+    ? [configured.regular, ...FONT_CANDIDATES.regular]
+    : [...FONT_CANDIDATES.regular];
+  const boldCandidates = configured.bold ? [configured.bold, ...FONT_CANDIDATES.bold] : [...FONT_CANDIDATES.bold];
+  const [regularPath, boldPath] = await Promise.all([
+    findReadableFontPath(regularCandidates),
+    findReadableFontPath(boldCandidates),
+  ]);
+
+  if (!regularPath || !boldPath) {
+    throw new Error(
+      "PDF font dosyalari bulunamadi. CERTIFICATE_FONT_REGULAR_PATH ve CERTIFICATE_FONT_BOLD_PATH ayarlarini tanimlayin veya DejaVu/Liberation/Noto Sans fontlarini sunucuya kurun.",
+    );
+  }
+
+  return { regularPath, boldPath };
 }
 
 async function embedUnicodeFonts(pdfDoc: PDFDocument) {
   pdfDoc.registerFontkit(fontkit);
-  const regularPath = "/System/Library/Fonts/Supplemental/Arial.ttf";
-  const boldPath = "/System/Library/Fonts/Supplemental/Arial Bold.ttf";
+  const { regularPath, boldPath } = await resolveFontPaths();
   const [regularBytes, boldBytes] = await Promise.all([fs.readFile(regularPath), fs.readFile(boldPath)]);
 
   const [regular, bold] = await Promise.all([

@@ -38,7 +38,8 @@
 
 ## Eksik Kalan Manuel Adımlar
 
-- Gerçek PostgreSQL bağlantı bilgilerini eklemek
+- Canlı SQLite dosya yolunu `DATABASE_URL` içine yazmak
 - Gerçek Resend anahtarlarını eklemek
 - Sertifika arka planlarını gerçek görsellerle değiştirmek
+- Gerekirse `CERTIFICATE_FONT_REGULAR_PATH` ve `CERTIFICATE_FONT_BOLD_PATH` ile TTF font yollarını tanımlamak
 - Hosting panelinde subdomain yönlendirmesini tamamlamak

@@ -27,3 +27,10 @@ export function getResendConfig() {
     senderName: process.env.RESEND_SENDER_NAME ?? "SEMMR Sertifika",
   };
 }
+
+export function getCertificateFontPaths() {
+  return {
+    regular: (process.env.CERTIFICATE_FONT_REGULAR_PATH ?? "").trim(),
+    bold: (process.env.CERTIFICATE_FONT_BOLD_PATH ?? "").trim(),
+  };
+}

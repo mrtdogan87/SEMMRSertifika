@@ -103,6 +103,10 @@ export async function createCertificateRecord(input: CertificateFormInput) {
     throw new Error("Ad Soyad, E-posta ve Makale Adı alanları zorunludur.");
   }
 
+  if (!isValidEmail(input.email)) {
+    throw new Error("Geçerli bir e-posta adresi girilmelidir.");
+  }
+
   return prisma.certificateRecord.create({
     data: {
       templateId: template.id,
@@ -230,6 +234,8 @@ export async function generateCertificateForRecord(id: string) {
     throw new Error("Sertifika kaydı bulunamadı.");
   }
 
+  let writtenPdfPath: string | null = null;
+
   try {
     validateTemplatePlaceholders(record.template.subjectTemplate);
     validateTemplatePlaceholders(record.template.bodyTemplate);
@@ -253,6 +259,7 @@ export async function generateCertificateForRecord(id: string) {
     });
 
     const file = await writeCertificatePdf(record.id, generated.bytes);
+    writtenPdfPath = file.relativePath;
     const warning = generated.warning;
 
     return prisma.certificateRecord.update({
@@ -268,13 +275,27 @@ export async function generateCertificateForRecord(id: string) {
       },
     });
   } catch (error) {
+    const stalePdfPath = writtenPdfPath ?? record.pdfPath;
+    const message = error instanceof Error ? error.message : "PDF üretimi başarısız oldu.";
+
     await prisma.certificateRecord.update({
       where: { id: record.id },
       data: {
         status: CertificateStatus.FAILED,
-        lastError: error instanceof Error ? error.message : "PDF üretimi başarısız oldu.",
+        pdfPath: null,
+        pdfFileSize: null,
+        lastError: message,
       },
     });
+
+    if (stalePdfPath) {
+      try {
+        await deleteCertificatePdf(stalePdfPath);
+      } catch {
+        // Do not mask the original generation error if stale cleanup fails.
+      }
+    }
+
     throw error;
   }
 }

@@ -46,8 +46,8 @@ export async function saveTemplateBackground(params: {
   bytes: Buffer;
 }) {
   const extension = path.extname(params.fileName).toLowerCase();
-  if (![".png", ".jpg", ".jpeg", ".webp"].includes(extension)) {
-    throw new Error("Sadece PNG, JPG, JPEG veya WEBP dosyaları yüklenebilir.");
+  if (![".png", ".jpg", ".jpeg"].includes(extension)) {
+    throw new Error("Sadece PNG, JPG veya JPEG dosyaları yüklenebilir.");
   }
 
   const targetDir = path.join(process.cwd(), "public", "certificate-backgrounds");

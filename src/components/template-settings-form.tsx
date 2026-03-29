@@ -1,22 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { CertificateType } from "@prisma/client";
-import { parseLayoutConfig, PREVIEW_FIELDS } from "@/components/certificate-visual-preview";
+import {
+  CertificateVisualPreview,
+  parseLayoutConfig,
+  PREVIEW_FIELDS,
+} from "@/components/certificate-visual-preview";
 import type { CertificateLayout, LabelConfig } from "@/lib/certificate-layouts";
-
-const CertificateVisualPreview = dynamic(
-  () => import("@/components/certificate-visual-preview").then((mod) => mod.CertificateVisualPreview),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="certificate-preview-shell">
-        <div className="certificate-preview certificate-preview-loading" />
-      </div>
-    ),
-  },
-);
 
 type TemplateSettingsFormProps = {
   template: {
@@ -271,7 +262,7 @@ export function TemplateSettingsForm({
                   id={`background-${template.id}`}
                   name="backgroundFile"
                   type="file"
-                  accept=".png,.jpg,.jpeg,.webp"
+                  accept=".png,.jpg,.jpeg"
                   onChange={(event) => setBackgroundFileName(event.target.files?.[0]?.name ?? "")}
                 />
               </div>
