@@ -168,9 +168,21 @@ function wrapText(text: string, maxChars: number) {
 }
 
 async function embedBackground(pdfDoc: PDFDocument, backgroundPath: string) {
-  const absolute = path.join(process.cwd(), "public", backgroundPath.replace(/^\//, ""));
-  const imageBytes = await fs.readFile(absolute);
-  const extension = path.extname(backgroundPath).toLowerCase();
+  const isRemote = /^https?:\/\//i.test(backgroundPath);
+  let imageBytes: Uint8Array;
+
+  if (isRemote) {
+    const response = await fetch(backgroundPath);
+    if (!response.ok) {
+      throw new Error("Arka plan görseli indirilemedi.");
+    }
+
+    imageBytes = new Uint8Array(await response.arrayBuffer());
+  } else {
+    imageBytes = await fs.readFile(path.join(process.cwd(), "public", backgroundPath.replace(/^\//, "")));
+  }
+
+  const extension = path.extname(new URL(backgroundPath, "http://localhost").pathname).toLowerCase();
 
   if (extension === ".png") {
     return pdfDoc.embedPng(imageBytes);

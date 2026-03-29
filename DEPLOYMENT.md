@@ -25,6 +25,25 @@
    - `npm run prisma:migrate:deploy`
    - `npm run prisma:seed`
 
+## Vercel + Neon Üzerinde
+
+1. Vercel projesini GitHub reposuna bağlayın.
+2. Neon bağlantı dizgisini hem `DATABASE_URL` hem `DIRECT_URL` olarak tanımlayın.
+3. Vercel Blob store oluşturun ve `BLOB_READ_WRITE_TOKEN` env’ini ekleyin.
+4. Aşağıdaki env’leri tanımlayın:
+   - `ADMIN_BOOTSTRAP_EMAIL`
+   - `ADMIN_BOOTSTRAP_PASSWORD`
+   - `APP_BASE_URL`
+   - `SESSION_SECRET`
+   - `RESEND_API_KEY`
+   - `RESEND_SENDER_EMAIL`
+   - `RESEND_SENDER_NAME`
+   - `CERTIFICATE_FONT_REGULAR_PATH` (opsiyonel)
+   - `CERTIFICATE_FONT_BOLD_PATH` (opsiyonel)
+5. İlk deploy sonrası:
+   - `npm run prisma:migrate:deploy`
+   - `npm run prisma:seed`
+
 ## GitHub Akışı
 
 1. Yeni GitHub reposu oluşturun.
@@ -38,8 +57,9 @@
 
 ## Eksik Kalan Manuel Adımlar
 
-- Canlı SQLite dosya yolunu `DATABASE_URL` içine yazmak
-- Gerçek Resend anahtarlarını eklemek
+- Neon bağlantı dizgisini `DATABASE_URL` ve `DIRECT_URL` olarak tanımlamak
+- Gerçek `RESEND_SENDER_EMAIL` değerini eklemek
+- Vercel kullanılacaksa `BLOB_READ_WRITE_TOKEN` eklemek
 - Sertifika arka planlarını gerçek görsellerle değiştirmek
 - Gerekirse `CERTIFICATE_FONT_REGULAR_PATH` ve `CERTIFICATE_FONT_BOLD_PATH` ile TTF font yollarını tanımlamak
 - Hosting panelinde subdomain yönlendirmesini tamamlamak
