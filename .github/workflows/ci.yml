@@ -9,7 +9,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: file:./dev.db
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/seltifika_test?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/seltifika_test?schema=public
       ADMIN_BOOTSTRAP_EMAIL: admin@example.com
       ADMIN_BOOTSTRAP_PASSWORD: change-me
       APP_BASE_URL: http://localhost:3000
@@ -18,9 +20,23 @@ jobs:
       RESEND_SENDER_EMAIL: no-reply@example.com
       RESEND_SENDER_NAME: SEMMR Sertifika
       FILE_STORAGE_ROOT: ./storage/certificates
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: seltifika_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d seltifika_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
